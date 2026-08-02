@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Medical Scribe</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: #f0f4f8; color: #1a202c; min-height: 100vh; padding: 16px; }
+        
+        .login-box {
+            max-width: 360px; margin: 60px auto; background: white;
+            padding: 32px 24px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .login-box h2 { margin-bottom: 24px; color: #2b6cb0; text-align: center; font-size: 24px; }
+        .login-box input {
+            width: 100%; padding: 14px; margin-bottom: 14px; border: 1.5px solid #e2e8f0;
+            border-radius: 12px; font-size: 16px; -webkit-appearance: none;
+        }
+        .login-box input:focus { outline: none; border-color: #2b6cb0; }
+        .login-box button {
+            width: 100%; padding: 14px; background: #2b6cb0; color: white;
+            border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer;
+        }
+        .login-box button:active { background: #2c5282; transform: scale(0.98); }
+        
+        .hidden { display: none !important; }
+        
+        .app-container { max-width: 800px; margin: 0 auto; }
+        .header {
+            background: white; padding: 16px 20px; border-radius: 14px;
+            margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .header h1 { font-size: 18px; color: #2b6cb0; }
+        .status { font-size: 13px; color: #718096; display: flex; align-items: center; gap: 6px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e0; }
+        .status-dot.active { background: #38a169; animation: pulse 2s infinite; }
+        .status-dot.recording { background: #e53e3e; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        
+        .card {
+            background: white; padding: 20px; border-radius: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06); margin-bottom: 16px;
+        }
+        .card h3 { margin-bottom: 12px; color: #2d3748; font-size: 16px; }
+        .card p { color: #718096; font-size: 14px; margin-bottom: 16px; line-height: 1.5; }
+        
+        .btn {
+            border: none; padding: 14px 24px; border-radius: 12px; font-size: 15px;
+            font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn-primary { background: #2b6cb0; color: white; }
+        .btn-danger { background: #c53030; color: white; }
+        .btn-secondary { background: #edf2f7; color: #4a5568; }
+        
+        .recording-row { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+        .timer { font-size: 28px; font-weight: 300; color: #2d3748; font-variant-numeric: tabular-nums; }
+        
+        .wave-box {
+            width: 100%; height: 60px; background: #f7fafc; border-radius: 10px;
+            border: 1px solid #e2e8f0; margin-bottom: 16px; position: relative; overflow: hidden;
+        }
+        .wave-bar {
+            position: absolute; bottom: 0; width: 6px; background: #2b6cb0;
+            border-radius: 3px 3px 0 0; transition: height 0.1s ease;
+        }
+        
+        .transcript-box {
+            width: 100%; min-height: 180px; padding: 16px; border: 1.5px solid #e2e8f0;
+            border-radius: 12px; font-size: 16px; line-height: 1.6; resize: vertical;
+            background: #fafbfc; -webkit-appearance: none;
+        }
+        .transcript-box:focus { outline: none; border-color: #2b6cb0; }
+        
+        .toolbar { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
+        
+        .progress-box { background: #edf2f7; padding: 12px; border-radius: 10px; margin-bottom: 12px; }
+        .progress-text { font-size: 13px; color: #4a5568; margin-bottom: 6px; }
+        .progress-bar { width: 100%; height: 6px; background: #cbd5e0; border-radius: 3px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #2b6cb0; width: 0%; transition: width 0.3s; }
+        
+        .toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: #2d3748; color: white; padding: 12px 24px; border-radius: 10px;
+            font-size: 14px; transition: transform 0.3s; z-index: 1000; white-space: nowrap;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        
+        .note { font-size: 12px; color: #a0aec0; margin-top: 12px; padding: 10px; background: #f7fafc; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN -->
+    <div id="loginPage" class="login-box">
+        <h2>Medical Scribe</h2>
+        <input type="text" id="username" placeholder="Username" value="scribe">
+        <input type="password" id="password" placeholder="Password" value="password">
+        <button onclick="window.doLogin()">Login</button>
+    </div>
+
+    <!-- APP -->
+    <div id="appPage" class="app-container hidden">
+        <div class="header">
+            <h1>Scribe Workspace</h1>
+            <div class="status">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Ready</span>
+            </div>
+        </div>
+        
+        <!-- MODEL LOADING -->
+        <div class="card" id="modelCard" style="display:none;">
+            <h3>AI Model</h3>
+            <div class="progress-box">
+                <div class="progress-text" id="progressText">Loading model...</div>
+                <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            </div>
+        </div>
+        
+        <!-- LIVE CAPTURE -->
+        <div class="card">
+            <h3>Live Transcription</h3>
+            <p>Click Start and allow microphone access. Speak clearly. On hospital PCs with loopback audio enabled, this will capture the encounter audio.</p>
+            
+            <div class="recording-row">
+                <button class="btn btn-primary" id="recordBtn" onclick="window.toggleRecord()">Start Listening</button>
+                <div class="timer hidden" id="timer">00:00</div>
+            </div>
+            
+            <div class="wave-box hidden" id="waveBox"></div>
+            
+            <textarea class="transcript-box" id="transcript" placeholder="Transcription will appear here..."></textarea>
+            
+            <div class="toolbar">
+                <button class="btn btn-secondary" onclick="window.copyText()">Copy Text</button>
+                <button class="btn btn-secondary" onclick="window.clearText()">Clear</button>
+                <button class="btn btn-secondary" onclick="window.saveCorrection()">Save Correction</button>
+            </div>
+            
+            <div class="note">
+                <strong>Note:</strong> This web app captures audio through your browser's microphone input. On Windows hospital PCs, if "Stereo Mix" is set as the default recording device, the browser will capture system audio (Teams, Zoom, etc.) automatically.
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Message</div>
+
+    <script type="module">
+        import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+        
+        // --- STATE ---
+        let asr = null;
+        let isRecording = false;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let recordTimer = null;
+        let seconds = 0;
+        let audioCtx = null;
+        let analyser = null;
+        let animFrame = null;
+        
+        // --- LOGIN ---
+        window.doLogin = () => {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('appPage').classList.remove('hidden');
+            loadModel();
+        };
+        
+        // --- MODEL LOADING ---
+        async function loadModel() {
+            const card = document.getElementById('modelCard');
+            const fill = document.getElementById('progressFill');
+            const text = document.getElementById('progressText');
+            card.style.display = 'block';
+            
+            try {
+                asr = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en', {
+                    dtype: 'q8',
+                    progress_callback: (x) => {
+                        if (x.status === 'progress') {
+                            const pct = Math.round(x.progress);
+                            fill.style.width = pct + '%';
+                            text.textContent = `Downloading model: ${pct}%`;
+                        }
+                        if (x.status === 'done') {
+                            text.textContent = 'Model ready!';
+                            fill.style.width = '100%';
+                            setTimeout(() => card.style.display = 'none', 800);
+                        }
+                    }
+                });
+                setStatus('ready');
+            } catch (e) {
+                text.textContent = 'Error loading model. Check internet.';
+                console.error(e);
+            }
+        }
+        
+        // --- RECORDING ---
+        window.toggleRecord = async () => {
+            const btn = document.getElementById('recordBtn');
+            
+            if (!isRecording) {
+                // START
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    startRecording(stream);
+                    btn.textContent = 'Stop Listening';
+                    btn.className = 'btn btn-danger';
+                    isRecording = true;
+                } catch (err) {
+                    alert('Microphone access denied. Please allow microphone permission in your browser settings.');
+                }
+            } else {
+                // STOP
+                stopRecording();
+                btn.textContent = 'Start Listening';
+                btn.className = 'btn btn-primary';
+                isRecording = false;
+            }
+        };
+        
+        function startRecording(stream) {
+            recordedChunks = [];
+            seconds = 0;
+            
+            // MediaRecorder
+            const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+            mediaRecorder = new MediaRecorder(stream, { mimeType });
+            
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) recordedChunks.push(e.data);
+            };
+            
+            mediaRecorder.onstop = async () => {
+                stream.getTracks().forEach(t => t.stop());
+                await processAudio();
+            };
+            
+            mediaRecorder.start();
+            
+            // Timer
+            document.getElementById('timer').classList.remove('hidden');
+            updateTimer();
+            recordTimer = setInterval(updateTimer, 1000);
+            
+            // Visualizer
+            document.getElementById('waveBox').classList.remove('hidden');
+            startVisualizer(stream);
+            
+            setStatus('recording');
+        }
+        
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            clearInterval(recordTimer);
+            document.getElementById('timer').classList.add('hidden');
+            document.getElementById('waveBox').classList.add('hidden');
+            stopVisualizer();
+            setStatus('processing');
+        }
+        
+        function updateTimer() {
+            seconds++;
+            const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+            const s = String(seconds % 60).padStart(2, '0');
+            document.getElementById('timer').textContent = `${m}:${s}`;
+        }
+        
+        // --- VISUALIZER (Fixed for Mobile) ---
+        function startVisualizer(stream) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            // CRITICAL FIX: resume on mobile
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const source = audioCtx.createMediaStreamSource(stream);
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 32;
+            source.connect(analyser);
+            
+            const box = document.getElementById('waveBox');
+            box.innerHTML = '';
+            const bars = 12;
+            for (let i = 0; i < bars; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'wave-bar';
+                bar.style.left = (i * (100 / bars)) + '%';
+                bar.style.width = (90 / bars) + '%';
+                box.appendChild(bar);
+            }
+            
+            const barEls = box.querySelectorAll('.wave-bar');
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            
+            function draw() {
+                animFrame = requestAnimationFrame(draw);
+                analyser.getByteFrequencyData(dataArray);
+                barEls.forEach((bar, i) => {
+                    const idx = Math.floor(i * dataArray.length / bars);
+                    const val = dataArray[idx] || 0;
+                    const h = Math.max(4, (val / 255) * 100);
+                    bar.style.height = h + '%';
+                });
+            }
+            draw();
+        }
+        
+        function stopVisualizer() {
+            if (animFrame) cancelAnimationFrame(animFrame);
+            if (audioCtx) audioCtx.close();
+        }
+        
+        // --- TRANSCRIPTION ---
+        async function processAudio() {
+            if (!asr) {
+                showToast('Model not loaded yet');
+                setStatus('ready');
+                return;
+            }
+            
+            const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+            const arrayBuffer = await blob.arrayBuffer();
+            
+            // Decode audio
+            const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const audioBuffer = await tempCtx.decodeAudioData(arrayBuffer);
+            const float32 = audioBuffer.getChannelData(0);
+            tempCtx.close();
+            
+            showToast('Transcribing...');
+            
+            try {
+                const output = await asr(float32, {
+                    chunk_length_s: 30,
+                    stride_length_s: 5,
+                    language: 'english',
+                    task: 'transcribe'
+                });
+                
+                const text = output.text.trim();
+                const box = document.getElementById('transcript');
+                if (box.value) box.value += '\n';
+                box.value += text;
+                
+                showToast('Transcription complete');
+            } catch (e) {
+                console.error(e);
+                showToast('Transcription failed');
+            }
+            
+            setStatus('ready');
+        }
+        
+        // --- TOOLS ---
+        window.copyText = () => {
+            const box = document.getElementById('transcript');
+            box.select();
+            document.execCommand('copy');
+            showToast('Copied to clipboard');
+        };
+        
+        window.clearText = () => {
+            document.getElementById('transcript').value = '';
+        };
+        
+        window.saveCorrection = () => {
+            // TODO: Store original vs corrected in IndexedDB
+            showToast('Correction saved (learning feature coming)');
+        };
+        
+        function setStatus(state) {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            dot.className = 'status-dot';
+            
+            if (state === 'ready') {
+                dot.classList.add('active');
+                text.textContent = 'Ready';
+            } else if (state === 'recording') {
+                dot.classList.add('recording');
+                text.textContent = 'Listening...';
+            } else if (state === 'processing') {
+                text.textContent = 'Transcribing...';
+            }
+        }
+        
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2500);
+        }
+    </script>
+</body>
+  </html>
+                  
