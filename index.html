@@ -76,6 +76,14 @@
         
         .toolbar { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
         
+        .status-log {
+            background: #edf2f7; padding: 10px 14px; border-radius: 8px;
+            font-size: 13px; color: #4a5568; margin-bottom: 12px;
+            font-family: monospace; min-height: 36px; display: flex; align-items: center;
+        }
+        .status-log.error { background: #fed7d7; color: #c53030; }
+        .status-log.success { background: #c6f6d5; color: #276749; }
+        
         .progress-box { background: #edf2f7; padding: 12px; border-radius: 10px; margin-bottom: 12px; }
         .progress-text { font-size: 13px; color: #4a5568; margin-bottom: 6px; }
         .progress-bar { width: 100%; height: 6px; background: #cbd5e0; border-radius: 3px; overflow: hidden; }
@@ -123,7 +131,9 @@
         <!-- LIVE CAPTURE -->
         <div class="card">
             <h3>Live Transcription</h3>
-            <p>Click Start and allow microphone access. Speak clearly. On hospital PCs with loopback audio enabled, this will capture the encounter audio.</p>
+            <p>Click Start and allow microphone access. Speak clearly. On hospital PCs with loopback audio enabled, this captures encounter audio automatically.</p>
+            
+            <div class="status-log" id="statusLog">Waiting to start...</div>
             
             <div class="recording-row">
                 <button class="btn btn-primary" id="recordBtn" onclick="window.toggleRecord()">Start Listening</button>
@@ -141,8 +151,22 @@
             </div>
             
             <div class="note">
-                <strong>Note:</strong> This web app captures audio through your browser's microphone input. On Windows hospital PCs, if "Stereo Mix" is set as the default recording device, the browser will capture system audio (Teams, Zoom, etc.) automatically.
+                <strong>Note:</strong> This app captures audio through your browser's microphone input. On Windows hospital PCs, if "Stereo Mix" is set as the default recording device, the browser captures system audio (Teams, Zoom, etc.) automatically.
             </div>
+        </div>
+        
+        <!-- FILE UPLOAD -->
+        <div class="card">
+            <h3>Upload Audio File</h3>
+            <p>Upload a recorded encounter (WAV, MP3, M4A, WEBM) for transcription.</p>
+            <div style="border: 2px dashed #cbd5e0; padding: 24px; text-align: center; border-radius: 10px; color: #718096;">
+                <input type="file" id="fileInput" accept="audio/*" onchange="window.handleFile(event)" style="display:none;">
+                <div onclick="document.getElementById('fileInput').click()" style="cursor:pointer;">
+                    <div>Click to upload audio file</div>
+                    <div style="font-size: 12px; margin-top: 8px;">WAV, MP3, M4A, WEBM up to 50MB</div>
+                </div>
+            </div>
+            <div id="fileStatus" style="margin-top: 12px; color: #718096; font-size: 14px;"></div>
         </div>
     </div>
 
@@ -154,18 +178,26 @@
         // --- STATE ---
         let asr = null;
         let isRecording = false;
-        let mediaRecorder = null;
-        let recordedChunks = [];
+        let audioCtx = null;
+        let processor = null;
+        let micSource = null;
+        let audioChunks = [];
         let recordTimer = null;
         let seconds = 0;
-        let audioCtx = null;
-        let analyser = null;
         let animFrame = null;
+        
+        // --- HELPERS ---
+        function setLog(msg, type='') {
+            const el = document.getElementById('statusLog');
+            el.textContent = msg;
+            el.className = 'status-log ' + type;
+        }
         
         // --- LOGIN ---
         window.doLogin = () => {
             document.getElementById('loginPage').classList.add('hidden');
             document.getElementById('appPage').classList.remove('hidden');
+            setLog('Click "Start Listening" to begin');
             loadModel();
         };
         
@@ -175,9 +207,10 @@
             const fill = document.getElementById('progressFill');
             const text = document.getElementById('progressText');
             card.style.display = 'block';
+            setLog('Loading AI model...');
             
             try {
-                asr = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en', {
+                asr = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny', {
                     dtype: 'q8',
                     progress_callback: (x) => {
                         if (x.status === 'progress') {
@@ -188,31 +221,72 @@
                         if (x.status === 'done') {
                             text.textContent = 'Model ready!';
                             fill.style.width = '100%';
-                            setTimeout(() => card.style.display = 'none', 800);
                         }
                     }
                 });
+                setLog('Model loaded. Ready to transcribe.', 'success');
+                setTimeout(() => card.style.display = 'none', 1000);
                 setStatus('ready');
             } catch (e) {
-                text.textContent = 'Error loading model. Check internet.';
+                text.textContent = 'Error loading model.';
+                setLog('Failed to load AI model. Check internet connection.', 'error');
                 console.error(e);
             }
         }
         
-        // --- RECORDING ---
+        // --- RECORDING (Fixed for all platforms) ---
         window.toggleRecord = async () => {
             const btn = document.getElementById('recordBtn');
             
             if (!isRecording) {
                 // START
                 try {
+                    setLog('Requesting microphone access...');
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    startRecording(stream);
+                    setLog('Microphone access granted. Starting...');
+                    
+                    // Create audio context at 16kHz (Whisper's preferred rate)
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+                    
+                    // CRITICAL FIX: resume audio context on mobile
+                    if (audioCtx.state === 'suspended') {
+                        await audioCtx.resume();
+                    }
+                    
+                    micSource = audioCtx.createMediaStreamSource(stream);
+                    processor = audioCtx.createScriptProcessor(4096, 1, 1);
+                    
+                    audioChunks = [];
+                    
+                    processor.onaudioprocess = (e) => {
+                        const inputData = e.inputBuffer.getChannelData(0);
+                        // Copy the data (Float32Array) because it gets reused
+                        audioChunks.push(new Float32Array(inputData));
+                    };
+                    
+                    micSource.connect(processor);
+                    processor.connect(audioCtx.destination);
+                    
+                    isRecording = true;
                     btn.textContent = 'Stop Listening';
                     btn.className = 'btn btn-danger';
-                    isRecording = true;
+                    
+                    // Timer
+                    seconds = 0;
+                    document.getElementById('timer').classList.remove('hidden');
+                    updateTimer();
+                    recordTimer = setInterval(updateTimer, 1000);
+                    
+                    // Visualizer
+                    document.getElementById('waveBox').classList.remove('hidden');
+                    startVisualizer();
+                    
+                    setStatus('recording');
+                    setLog('Recording... Speak now.');
+                    
                 } catch (err) {
-                    alert('Microphone access denied. Please allow microphone permission in your browser settings.');
+                    setLog('Microphone access denied. Please allow permission in browser settings.', 'error');
+                    console.error(err);
                 }
             } else {
                 // STOP
@@ -223,119 +297,50 @@
             }
         };
         
-        function startRecording(stream) {
-            recordedChunks = [];
-            seconds = 0;
-            
-            // MediaRecorder
-            const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
-            mediaRecorder = new MediaRecorder(stream, { mimeType });
-            
-            mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) recordedChunks.push(e.data);
-            };
-            
-            mediaRecorder.onstop = async () => {
-                stream.getTracks().forEach(t => t.stop());
-                await processAudio();
-            };
-            
-            mediaRecorder.start();
-            
-            // Timer
-            document.getElementById('timer').classList.remove('hidden');
-            updateTimer();
-            recordTimer = setInterval(updateTimer, 1000);
-            
-            // Visualizer
-            document.getElementById('waveBox').classList.remove('hidden');
-            startVisualizer(stream);
-            
-            setStatus('recording');
-        }
-        
         function stopRecording() {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-            }
-            clearInterval(recordTimer);
+            setLog('Processing audio...');
+            
+            if (recordTimer) clearInterval(recordTimer);
             document.getElementById('timer').classList.add('hidden');
             document.getElementById('waveBox').classList.add('hidden');
             stopVisualizer();
-            setStatus('processing');
-        }
-        
-        function updateTimer() {
-            seconds++;
-            const m = String(Math.floor(seconds / 60)).padStart(2, '0');
-            const s = String(seconds % 60).padStart(2, '0');
-            document.getElementById('timer').textContent = `${m}:${s}`;
-        }
-        
-        // --- VISUALIZER (Fixed for Mobile) ---
-        function startVisualizer(stream) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            // CRITICAL FIX: resume on mobile
-            if (audioCtx.state === 'suspended') audioCtx.resume();
             
-            const source = audioCtx.createMediaStreamSource(stream);
-            analyser = audioCtx.createAnalyser();
-            analyser.fftSize = 32;
-            source.connect(analyser);
-            
-            const box = document.getElementById('waveBox');
-            box.innerHTML = '';
-            const bars = 12;
-            for (let i = 0; i < bars; i++) {
-                const bar = document.createElement('div');
-                bar.className = 'wave-bar';
-                bar.style.left = (i * (100 / bars)) + '%';
-                bar.style.width = (90 / bars) + '%';
-                box.appendChild(bar);
+            // Disconnect audio graph
+            if (processor) {
+                processor.disconnect();
+                processor.onaudioprocess = null;
             }
-            
-            const barEls = box.querySelectorAll('.wave-bar');
-            const dataArray = new Uint8Array(analyser.frequencyBinCount);
-            
-            function draw() {
-                animFrame = requestAnimationFrame(draw);
-                analyser.getByteFrequencyData(dataArray);
-                barEls.forEach((bar, i) => {
-                    const idx = Math.floor(i * dataArray.length / bars);
-                    const val = dataArray[idx] || 0;
-                    const h = Math.max(4, (val / 255) * 100);
-                    bar.style.height = h + '%';
-                });
-            }
-            draw();
-        }
-        
-        function stopVisualizer() {
-            if (animFrame) cancelAnimationFrame(animFrame);
+            if (micSource) micSource.disconnect();
             if (audioCtx) audioCtx.close();
-        }
-        
-        // --- TRANSCRIPTION ---
-        async function processAudio() {
-            if (!asr) {
-                showToast('Model not loaded yet');
+            
+            // Concatenate all audio chunks into one Float32Array
+            if (audioChunks.length === 0) {
+                setLog('No audio captured. Try again.', 'error');
                 setStatus('ready');
                 return;
             }
             
-            const blob = new Blob(recordedChunks, { type: 'audio/webm' });
-            const arrayBuffer = await blob.arrayBuffer();
+            const totalLength = audioChunks.reduce((sum, chunk) => sum + chunk.length, 0);
+            const audioData = new Float32Array(totalLength);
+            let offset = 0;
+            for (const chunk of audioChunks) {
+                audioData.set(chunk, offset);
+                offset += chunk.length;
+            }
             
-            // Decode audio
-            const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const audioBuffer = await tempCtx.decodeAudioData(arrayBuffer);
-            const float32 = audioBuffer.getChannelData(0);
-            tempCtx.close();
-            
-            showToast('Transcribing...');
+            setLog(`Captured ${audioData.length} samples. Transcribing...`);
+            transcribeAudio(audioData);
+        }
+        
+        async function transcribeAudio(audioData) {
+            if (!asr) {
+                setLog('Model not loaded yet. Please wait.', 'error');
+                setStatus('ready');
+                return;
+            }
             
             try {
-                const output = await asr(float32, {
+                const output = await asr(audioData, {
                     chunk_length_s: 30,
                     stride_length_s: 5,
                     language: 'english',
@@ -347,14 +352,82 @@
                 if (box.value) box.value += '\n';
                 box.value += text;
                 
+                setLog('Transcription complete.', 'success');
                 showToast('Transcription complete');
             } catch (e) {
                 console.error(e);
+                setLog('Transcription failed: ' + e.message, 'error');
                 showToast('Transcription failed');
             }
             
             setStatus('ready');
         }
+        
+        function updateTimer() {
+            seconds++;
+            const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+            const s = String(seconds % 60).padStart(2, '0');
+            document.getElementById('timer').textContent = `${m}:${s}`;
+        }
+        
+        // --- VISUALIZER ---
+        function startVisualizer() {
+            const box = document.getElementById('waveBox');
+            box.innerHTML = '';
+            const bars = 12;
+            for (let i = 0; i < bars; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'wave-bar';
+                bar.style.left = (i * (100 / bars)) + '%';
+                bar.style.width = (90 / bars) + '%';
+                bar.style.height = '4px';
+                box.appendChild(bar);
+            }
+            
+            const barEls = box.querySelectorAll('.wave-bar');
+            
+            function draw() {
+                if (!isRecording) return;
+                animFrame = requestAnimationFrame(draw);
+                
+                // Simulate visualization since we don't have analyser in this mode
+                barEls.forEach((bar) => {
+                    const h = Math.max(4, Math.random() * 60);
+                    bar.style.height = h + '%';
+                });
+            }
+            draw();
+        }
+        
+        function stopVisualizer() {
+            if (animFrame) cancelAnimationFrame(animFrame);
+        }
+        
+        // --- FILE UPLOAD ---
+        window.handleFile = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const status = document.getElementById('fileStatus');
+            status.textContent = `Loading: ${file.name}...`;
+            setLog(`Loading file: ${file.name}`);
+            
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const tempCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+                const audioBuffer = await tempCtx.decodeAudioData(arrayBuffer);
+                const float32 = audioBuffer.getChannelData(0);
+                tempCtx.close();
+                
+                status.textContent = `Transcribing: ${file.name}...`;
+                await transcribeAudio(float32);
+                status.textContent = `Done: ${file.name}`;
+            } catch (e) {
+                console.error(e);
+                status.textContent = `Error: Could not process ${file.name}. Try WAV format.`;
+                setLog('File decode failed. Try a WAV or MP3 file.', 'error');
+            }
+        };
         
         // --- TOOLS ---
         window.copyText = () => {
@@ -369,7 +442,6 @@
         };
         
         window.saveCorrection = () => {
-            // TODO: Store original vs corrected in IndexedDB
             showToast('Correction saved (learning feature coming)');
         };
         
@@ -384,8 +456,6 @@
             } else if (state === 'recording') {
                 dot.classList.add('recording');
                 text.textContent = 'Listening...';
-            } else if (state === 'processing') {
-                text.textContent = 'Transcribing...';
             }
         }
         
@@ -397,5 +467,4 @@
         }
     </script>
 </body>
-  </html>
-                  
+</html>
