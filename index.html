@@ -3,361 +3,350 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AETHER — AI Medical Scribe</title>
+    <title>AETHER — Transcribe</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root {
-            --bg: #070b14;
-            --card: rgba(30, 41, 59, 0.55);
-            --border: rgba(148, 163, 184, 0.12);
-            --text: #e2e8f0;
-            --muted: #94a3b8;
-            --dim: #64748b;
-            --primary: #6366f1;
-            --primary-glow: rgba(99, 102, 241, 0.35);
-            --accent: #8b5cf6;
-            --success: #4ade80;
-            --danger: #ef4444;
-            --warning: #f59e0b;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        :root{
+            --bg:#05060a;
+            --surface:rgba(255,255,255,0.03);
+            --surface-hover:rgba(255,255,255,0.06);
+            --border:rgba(255,255,255,0.08);
+            --text:#f0f1f5;
+            --text-dim:#8b8fa3;
+            --text-dimmer:#5a5e75;
+            --accent:#7c6fff;
+            --accent-2:#4f9dff;
+            --accent-3:#22d3ee;
+            --silver:#b8bcc8;
+            --led:#ffffff;
+            --good:#34d399;
+            --warn:#fbbf24;
+            --danger:#f87171;
+            --radius:16px;
+            --font:'Inter',system-ui,-apple-system,sans-serif;
+            --mono:'JetBrains Mono',monospace;
         }
         
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            overflow-x: hidden;
-            -webkit-tap-highlight-color: transparent;
+        *{margin:0;padding:0;box-sizing:border-box;}
+        
+        body{
+            font-family:var(--font);
+            background:var(--bg);
+            color:var(--text);
+            min-height:100vh;
+            overflow-x:hidden;
+            -webkit-tap-highlight-color:transparent;
         }
         
-        .bg {
-            position: fixed; inset: 0; z-index: -1;
-            background: 
-                radial-gradient(ellipse at 15% 15%, rgba(99,102,241,0.18) 0%, transparent 55%),
-                radial-gradient(ellipse at 85% 85%, rgba(139,92,246,0.12) 0%, transparent 55%),
-                #070b14;
+        /* Animated background nebula */
+        .nebula{
+            position:fixed;inset:0;z-index:-1;
+            background:
+                radial-gradient(900px 600px at 10% 0%,rgba(124,111,255,0.12),transparent 60%),
+                radial-gradient(800px 600px at 90% 100%,rgba(79,157,255,0.10),transparent 60%),
+                radial-gradient(600px 400px at 50% 50%,rgba(34,211,238,0.04),transparent 50%),
+                var(--bg);
+            animation:nebulaShift 20s ease-in-out infinite alternate;
+        }
+        @keyframes nebulaShift{
+            0%{filter:hue-rotate(0deg) brightness(1);}
+            100%{filter:hue-rotate(15deg) brightness(1.05);}
         }
         
-        .container { max-width: 880px; margin: 0 auto; padding: 20px; }
+        /* Silver LED line */
+        .led-track{
+            width:100%;height:2px;
+            background:linear-gradient(90deg,transparent 0%,rgba(184,188,200,0.25) 20%,rgba(184,188,200,0.25) 80%,transparent 100%);
+            position:relative;overflow:hidden;margin:0;
+        }
+        .led-bulb{
+            position:absolute;top:-3px;left:-60px;width:60px;height:8px;
+            background:radial-gradient(ellipse at center,var(--led) 0%,rgba(184,188,200,0.9) 30%,transparent 70%);
+            box-shadow:0 0 12px rgba(255,255,255,0.9),0 0 30px rgba(184,188,200,0.6),0 0 60px rgba(124,111,255,0.3);
+            border-radius:4px;
+            animation:ledRun 4s cubic-bezier(0.4,0,0.2,1) infinite;
+        }
+        .led-bulb::after{
+            content:'';position:absolute;inset:0;
+            background:linear-gradient(90deg,transparent,var(--led),transparent);
+            opacity:0.6;filter:blur(2px);
+        }
+        @keyframes ledRun{
+            0%{left:-60px;opacity:0;}
+            10%{opacity:1;}
+            90%{opacity:1;}
+            100%{left:100%;opacity:0;}
+        }
+        
+        .app{max-width:720px;margin:0 auto;padding:24px 20px 60px;}
         
         /* Header */
-        .header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 18px 0; margin-bottom: 28px;
-            border-bottom: 1px solid var(--border);
+        .header{
+            display:flex;align-items:center;justify-content:space-between;
+            margin-bottom:28px;
         }
-        .brand { display: flex; align-items: center; gap: 12px; }
-        .brand-mark {
-            width: 38px; height: 38px; border-radius: 10px;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 800; font-size: 20px; color: #fff;
-            box-shadow: 0 0 20px var(--primary-glow);
+        .brand{display:flex;align-items:center;gap:12px;}
+        .brand-mark{
+            width:36px;height:36px;border-radius:10px;
+            background:linear-gradient(135deg,var(--accent),var(--accent-2));
+            display:flex;align-items:center;justify-content:center;
+            font-weight:800;font-size:18px;color:#fff;
+            box-shadow:0 0 24px rgba(124,111,255,0.45);
+            animation:markPulse 4s ease-in-out infinite;
         }
-        .brand-name {
-            font-size: 22px; font-weight: 700; letter-spacing: 2px;
-            background: linear-gradient(135deg, #f8fafc, #94a3b8);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        @keyframes markPulse{
+            0%,100%{box-shadow:0 0 24px rgba(124,111,255,0.45);}
+            50%{box-shadow:0 0 36px rgba(124,111,255,0.7);}
         }
-        .badge {
-            font-size: 11px; font-weight: 600; padding: 6px 12px;
-            background: rgba(99,102,241,0.12); color: #818cf8;
-            border: 1px solid rgba(99,102,241,0.25); border-radius: 20px;
-            display: flex; align-items: center; gap: 6px;
+        .brand-text{font-size:20px;font-weight:700;letter-spacing:1.5px;
+            background:linear-gradient(135deg,#fff,var(--silver));
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;
         }
-        .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
-        .badge-dot.busy { background: var(--warning); animation: blink 1.2s infinite; }
-        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+        .status-chip{
+            font-size:11px;font-weight:600;padding:5px 12px;border-radius:20px;
+            display:flex;align-items:center;gap:6px;
+            background:rgba(52,211,153,0.08);color:var(--good);border:1px solid rgba(52,211,153,0.2);
+        }
+        .status-chip.offline{background:rgba(248,113,113,0.08);color:var(--danger);border-color:rgba(248,113,113,0.2);}
+        .status-chip.busy{background:rgba(251,191,36,0.08);color:var(--warn);border-color:rgba(251,191,36,0.2);}
+        .status-dot{width:6px;height:6px;border-radius:50%;background:var(--good);box-shadow:0 0 8px var(--good);}
+        .status-dot.busy{background:var(--warn);box-shadow:0 0 8px var(--warn);animation:blink 1.5s infinite;}
+        .status-dot.offline{background:var(--danger);box-shadow:0 0 8px var(--danger);}
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
         
-        /* Cards */
-        .card {
-            background: var(--card);
-            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border); border-radius: 18px;
-            padding: 24px; margin-bottom: 20px;
-            animation: slideUp .5s ease;
+        /* Memory indicator */
+        .memory-chip{
+            font-size:11px;font-weight:500;padding:4px 10px;border-radius:20px;
+            background:rgba(124,111,255,0.08);color:var(--accent);border:1px solid rgba(124,111,255,0.2);
+            cursor:pointer;transition:all .2s;
         }
-        @keyframes slideUp { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
-        .card h2 {
-            font-size: 15px; font-weight: 600; color: #f8fafc;
-            margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
-        }
-        .card p { color: var(--muted); font-size: 13.5px; line-height: 1.6; margin-bottom: 20px; }
+        .memory-chip:hover{background:rgba(124,111,255,0.15);}
         
-        /* Tabs */
-        .tabs {
-            display: flex; gap: 6px; margin-bottom: 24px;
-            background: rgba(15,23,42,0.5); padding: 5px;
-            border-radius: 14px; border: 1px solid var(--border);
+        /* Mode switcher */
+        .mode-bar{
+            display:flex;gap:8px;margin-bottom:24px;
+            background:var(--surface);padding:5px;border-radius:14px;border:1px solid var(--border);
         }
-        .tab {
-            flex: 1; padding: 12px; text-align: center;
-            background: transparent; color: var(--dim);
-            border: none; border-radius: 10px;
-            font-size: 14px; font-weight: 500; cursor: pointer;
-            transition: all .25s ease;
+        .mode-btn{
+            flex:1;padding:12px;text-align:center;border-radius:10px;
+            background:transparent;color:var(--text-dimmer);border:none;
+            font-size:14px;font-weight:600;cursor:pointer;transition:all .25s ease;
+            display:flex;align-items:center;justify-content:center;gap:8px;
         }
-        .tab.active {
-            background: rgba(99,102,241,0.18); color: var(--text);
-            box-shadow: 0 2px 12px rgba(99,102,241,0.15);
+        .mode-btn.active{
+            background:linear-gradient(135deg,rgba(124,111,255,0.18),rgba(79,157,255,0.12));
+            color:var(--text);box-shadow:0 2px 12px rgba(124,111,255,0.15);
+            border:1px solid rgba(124,111,255,0.3);
         }
         
-        /* Buttons */
-        .btn {
-            padding: 13px 26px; border-radius: 12px; border: none;
-            font-size: 14px; font-weight: 600; cursor: pointer;
-            transition: all .2s; display: inline-flex; align-items: center; gap: 8px;
-            touch-action: manipulation;
+        /* Glass card */
+        .card{
+            background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+            padding:24px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+            animation:cardIn .5s cubic-bezier(.34,1.56,.64,1);
         }
-        .btn:active { transform: scale(.96); }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            color: #fff; box-shadow: 0 4px 20px var(--primary-glow);
-        }
-        .btn-primary:hover { box-shadow: 0 6px 28px rgba(99,102,241,0.5); }
-        .btn-danger {
-            background: linear-gradient(135deg, var(--danger), #dc2626);
-            color: #fff; box-shadow: 0 4px 20px rgba(239,68,68,0.3);
-        }
-        .btn-secondary {
-            background: rgba(148,163,184,0.08); color: #cbd5e1;
-            border: 1px solid rgba(148,163,184,0.18);
-        }
-        .btn:disabled { opacity: .45; cursor: not-allowed; }
+        @keyframes cardIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
         
-        .record-btn {
-            width: 64px; height: 64px; border-radius: 50%;
-            border: none; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            box-shadow: 0 4px 24px var(--primary-glow);
-            transition: all .3s ease; position: relative;
-        }
-        .record-btn::before {
-            content: ''; position: absolute; inset: -4px;
-            border-radius: 50%; border: 2px solid var(--primary);
-            opacity: 0; transition: all .3s;
-        }
-        .record-btn.recording {
-            background: linear-gradient(135deg, var(--danger), #dc2626);
-            box-shadow: 0 4px 24px rgba(239,68,68,0.4);
-            animation: pulse-ring 1.5s infinite;
-        }
-        .record-btn.recording::before { opacity: 1; animation: ripple 1.5s infinite; }
-        @keyframes pulse-ring { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
-        @keyframes ripple { 0%{transform:scale(1);opacity:.6} 100%{transform:scale(1.4);opacity:0} }
-        .record-btn svg { width: 24px; height: 24px; fill: #fff; }
+        .card h2{font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+        .card p{color:var(--text-dim);font-size:13px;line-height:1.6;margin-bottom:20px;}
         
-        /* Waveform */
-        .wave-box {
-            height: 90px; background: rgba(15,23,42,0.45);
-            border-radius: 14px; border: 1px solid rgba(99,102,241,0.15);
-            margin: 20px 0; position: relative; overflow: hidden;
+        /* Record button */
+        .rec-wrap{
+            display:flex;flex-direction:column;align-items:center;padding:32px 0 16px;
         }
-        canvas.waveform { width: 100%; height: 100%; display: block; }
-        .wave-label {
-            position: absolute; inset: 0; display: flex;
-            align-items: center; justify-content: center;
-            color: var(--dim); font-size: 13px; pointer-events: none;
+        .rec-orb{
+            width:88px;height:88px;border-radius:50%;
+            background:linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02));
+            border:1px solid rgba(255,255,255,0.12);
+            display:flex;align-items:center;justify-content:center;
+            cursor:pointer;position:relative;transition:all .3s ease;
+            box-shadow:0 8px 32px rgba(0,0,0,0.3);
+        }
+        .rec-orb:hover{transform:scale(1.05);border-color:rgba(124,111,255,0.4);}
+        .rec-orb.recording{
+            background:linear-gradient(135deg,var(--danger),#fb7185);
+            border-color:rgba(248,113,113,0.5);
+            box-shadow:0 0 0 8px rgba(248,113,113,0.1),0 8px 40px rgba(248,113,113,0.35);
+            animation:recPulse 2s ease-in-out infinite;
+        }
+        @keyframes recPulse{
+            0%,100%{box-shadow:0 0 0 8px rgba(248,113,113,0.1),0 8px 40px rgba(248,113,113,0.35);}
+            50%{box-shadow:0 0 0 16px rgba(248,113,113,0.05),0 8px 50px rgba(248,113,113,0.5);}
+        }
+        .rec-orb svg{width:28px;height:28px;fill:var(--text);}
+        .rec-orb.recording svg{fill:#fff;}
+        
+        .rec-label{margin-top:14px;font-size:13px;font-weight:600;color:var(--text-dim);}
+        .rec-timer{font-size:12px;color:var(--text-dimmer);margin-top:4px;font-variant-numeric:tabular-nums;}
+        
+        /* Waveform canvas */
+        .wave-box{
+            width:100%;height:80px;border-radius:12px;
+            background:rgba(0,0,0,0.25);border:1px solid var(--border);
+            margin:16px 0;position:relative;overflow:hidden;
+        }
+        canvas.waveform{width:100%;height:100%;display:block;}
+        .wave-placeholder{
+            position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+            color:var(--text-dimmer);font-size:12px;pointer-events:none;
         }
         
-        /* Transcript areas */
-        .transcript-box {
-            width: 100%; min-height: 220px;
-            background: rgba(15,23,42,0.45);
-            border: 1px solid var(--border); border-radius: 14px;
-            padding: 18px; color: var(--text); font-size: 15px;
-            line-height: 1.65; resize: vertical; font-family: inherit;
+        /* Transcript area */
+        .transcript-area{
+            width:100%;min-height:200px;
+            background:rgba(0,0,0,0.2);border:1px solid var(--border);border-radius:12px;
+            padding:16px;color:var(--text);font-size:14.5px;line-height:1.7;
+            resize:vertical;font-family:var(--font);
         }
-        .transcript-box:focus { outline: none; border-color: rgba(99,102,241,0.4); }
-        .transcript-box::placeholder { color: var(--dim); }
+        .transcript-area:focus{outline:none;border-color:rgba(124,111,255,0.4);}
+        .transcript-area::placeholder{color:var(--text-dimmer);}
         
-        .live-feed {
-            width: 100%; min-height: 220px; max-height: 420px; overflow-y: auto;
-            background: rgba(15,23,42,0.45);
-            border: 1px solid var(--border); border-radius: 14px;
-            padding: 16px;
+        /* Dropzone */
+        .dropzone{
+            border:1.5px dashed rgba(124,111,255,0.3);border-radius:18px;
+            padding:40px 20px;text-align:center;color:var(--text-dim);
+            cursor:pointer;transition:all .25s;background:rgba(124,111,255,0.02);
         }
-        .live-segment {
-            margin-bottom: 10px; padding: 12px 14px;
-            background: rgba(99,102,241,0.06);
-            border-left: 3px solid var(--primary);
-            border-radius: 0 10px 10px 0;
-            animation: fadeIn .35s ease;
+        .dropzone:hover,.dropzone.dragover{
+            border-color:rgba(124,111,255,0.6);
+            background:rgba(124,111,255,0.06);
+            transform:translateY(-2px);
         }
-        @keyframes fadeIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
-        .live-segment .time { font-size: 11px; color: var(--dim); margin-bottom: 4px; }
-        .live-segment .text { color: var(--text); font-size: 14.5px; line-height: 1.5; }
-        .live-segment .interim { color: var(--muted); font-style: italic; }
+        .dropzone-icon{font-size:32px;margin-bottom:10px;opacity:.8;}
+        .dropzone-title{font-size:14.5px;font-weight:700;color:var(--text);margin-bottom:4px;}
+        .dropzone-sub{font-size:12px;color:var(--text-dim);}
         
-        /* Upload */
-        .upload-zone {
-            border: 2px dashed rgba(99,102,241,0.25);
-            border-radius: 16px; padding: 48px 24px;
-            text-align: center; color: var(--dim);
-            cursor: pointer; transition: all .25s;
-        }
-        .upload-zone:hover {
-            border-color: rgba(99,102,241,0.55);
-            background: rgba(99,102,241,0.04);
-        }
-        .upload-zone .icon { font-size: 36px; margin-bottom: 12px; opacity: .7; }
+        /* Progress */
+        .progress-wrap{margin:16px 0;}
+        .progress-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim);margin-bottom:6px;}
+        .progress-track{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;}
+        .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-3));border-radius:2px;transition:width .3s;}
         
-        .progress-box { margin: 18px 0; }
-        .progress-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-        .progress-track { height: 5px; background: rgba(148,163,184,0.1); border-radius: 3px; overflow: hidden; }
-        .progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 3px; transition: width .3s; }
-        
-        .toolbar { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
-        
-        .hint {
-            margin-top: 14px; padding: 12px 14px;
-            background: rgba(99,102,241,0.06); border-radius: 10px;
-            border: 1px solid rgba(99,102,241,0.12);
-            font-size: 12.5px; color: var(--muted); line-height: 1.5;
+        /* Toolbar */
+        .toolbar{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
+        .btn{
+            display:inline-flex;align-items:center;gap:7px;padding:10px 18px;
+            border-radius:10px;border:none;font-size:13px;font-weight:600;
+            cursor:pointer;transition:all .15s;color:var(--text);
+            background:var(--surface-hover);border:1px solid var(--border);
         }
-        .hint strong { color: #cbd5e1; }
+        .btn:hover{background:rgba(255,255,255,0.1);transform:translateY(-1px);}
+        .btn:active{transform:scale(.97);}
+        .btn-primary{
+            background:linear-gradient(135deg,var(--accent),var(--accent-2));
+            border:none;box-shadow:0 4px 16px rgba(124,111,255,0.35);
+        }
+        .btn-primary:hover{box-shadow:0 6px 24px rgba(124,111,255,0.5);}
+        .btn-good{background:rgba(52,211,153,0.12);color:var(--good);border-color:rgba(52,211,153,0.25);}
+        .btn-warn{background:rgba(251,191,36,0.12);color:var(--warn);border-color:rgba(251,191,36,0.25);}
         
-        .command-grid {
-            display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
-            margin-top: 14px;
+        /* File item */
+        .file-item{
+            display:flex;align-items:center;gap:12px;padding:14px 16px;
+            background:rgba(0,0,0,0.2);border-radius:12px;border:1px solid var(--border);
+            margin-top:12px;animation:cardIn .4s ease;
         }
-        .command-item {
-            display: flex; justify-content: space-between;
-            padding: 8px 12px; background: rgba(15,23,42,0.4);
-            border-radius: 8px; font-size: 13px; color: var(--muted);
-            border: 1px solid var(--border);
+        .file-icon{width:36px;height:36px;border-radius:9px;flex-shrink:0;
+            background:linear-gradient(135deg,var(--accent),var(--accent-2));
+            display:flex;align-items:center;justify-content:center;font-size:15px;}
+        .file-meta{flex:1;min-width:0;}
+        .file-name{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .file-sub{font-size:11.5px;color:var(--text-dim);margin-top:2px;}
+        
+        /* Corrections modal */
+        .modal-overlay{
+            position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);
+            z-index:100;display:none;align-items:center;justify-content:center;padding:20px;
         }
-        .command-item kbd {
-            background: rgba(99,102,241,0.15); color: #a5b4fc;
-            padding: 2px 8px; border-radius: 6px; font-family: inherit; font-size: 12px;
+        .modal-overlay.show{display:flex;}
+        .modal{
+            background:linear-gradient(180deg,rgba(30,32,45,0.95),rgba(20,22,35,0.98));
+            border:1px solid var(--border);border-radius:20px;padding:24px;
+            max-width:420px;width:100%;max-height:80vh;overflow-y:auto;
+            animation:modalIn .3s cubic-bezier(.34,1.56,.64,1);
+        }
+        @keyframes modalIn{from{opacity:0;transform:scale(.9) translateY(20px)}to{opacity:1;transform:none}}
+        .modal h3{font-size:16px;font-weight:700;margin-bottom:16px;}
+        .corr-item{display:flex;justify-content:space-between;align-items:center;
+            padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;}
+        .corr-item .bad{color:var(--danger);text-decoration:line-through;}
+        .corr-item .good{color:var(--good);}
+        
+        /* Toast */
+        .toast{
+            position:fixed;bottom:24px;left:50%;
+            transform:translateX(-50%) translateY(120px);
+            background:linear-gradient(135deg,rgba(30,32,45,0.98),rgba(25,27,40,0.98));
+            border:1px solid var(--border);border-radius:14px;padding:14px 24px;
+            font-size:13.5px;color:var(--text);z-index:200;
+            transition:transform .4s cubic-bezier(.34,1.56,.64,1);
+            display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,0.4);
+        }
+        .toast.show{transform:translateX(-50%) translateY(0);}
+        
+        .hidden{display:none !important;}
+        .panel{animation:cardIn .45s ease;}
+        
+        /* Settings row */
+        .setting-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+        .setting-label{font-size:13px;color:var(--text-dim);}
+        select{
+            background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;
+            padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--font);
         }
         
-        .toast {
-            position: fixed; bottom: 24px; left: 50%;
-            transform: translateX(-50%) translateY(120%);
-            background: rgba(30,41,59,0.95); color: var(--text);
-            padding: 14px 28px; border-radius: 14px;
-            border: 1px solid var(--border); font-size: 14px;
-            transition: transform .35s cubic-bezier(.34,1.56,.64,1);
-            z-index: 1000; backdrop-filter: blur(12px);
-            display: flex; align-items: center; gap: 10px;
-        }
-        .toast.show { transform: translateX(-50%) translateY(0); }
-        .toast-icon { font-size: 18px; }
-        
-        .hidden { display: none !important; }
-        .panel { animation: slideUp .4s ease; }
-        
-        .privacy-footer {
-            text-align: center; padding: 24px 0 40px;
-            font-size: 12px; color: var(--dim);
-        }
-        .privacy-footer .local { color: var(--success); font-weight: 600; }
-        .privacy-footer .cloud { color: var(--warning); font-weight: 600; }
+        .privacy-foot{text-align:center;padding:28px 0 40px;font-size:11.5px;color:var(--text-dimmer);}
+        .privacy-foot b{color:var(--good);}
     </style>
 </head>
 <body>
-    <div class="bg"></div>
-    <div class="container">
-        
+    <div class="nebula"></div>
+    
+    <div class="app">
         <div class="header">
             <div class="brand">
                 <div class="brand-mark">A</div>
-                <div class="brand-name">AETHER</div>
+                <div class="brand-text">AETHER</div>
             </div>
-            <div class="badge">
-                <div class="badge-dot" id="statusDot"></div>
-                <span id="statusText">Ready</span>
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div class="memory-chip" id="memoryChip" onclick="openMemory()">🧠 AI Memory: 0</div>
+                <div class="status-chip" id="statusChip"><div class="status-dot" id="statusDot"></div><span id="statusText">Ready</span></div>
             </div>
         </div>
         
-        <div class="tabs">
-            <button class="tab active" onclick="switchTab('live')">Live Session</button>
-            <button class="tab" onclick="switchTab('dictate')">Dictate</button>
-            <button class="tab" onclick="switchTab('upload')">Upload</button>
-        </div>
+        <div class="led-track"><div class="led-bulb"></div></div>
         
-        <!-- LIVE SESSION -->
-        <div id="panel-live" class="panel">
-            <div class="card">
-                <h2>🔴 Live Session</h2>
-                <p>Real-time captions during patient encounters. Speak or play audio — text appears as words are recognized. Best for following along with Teams, Zoom, or in-room conversations.</p>
-                
-                <div style="display:flex; align-items:center; gap:16px; margin-bottom:8px;">
-                    <button class="record-btn" id="liveRecordBtn" onclick="toggleLive()">
-                        <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
-                    </button>
-                    <div>
-                        <div style="font-size:18px; font-weight:600;" id="liveTimer">00:00</div>
-                        <div style="font-size:12px; color:var(--dim);" id="liveSub">Tap to start listening</div>
-                    </div>
-                </div>
-                
-                <div class="wave-box">
-                    <canvas class="waveform" id="liveWave"></canvas>
-                    <div class="wave-label" id="liveWaveLabel">Audio waveform will appear here</div>
-                </div>
-                
-                <div class="live-feed" id="liveFeed">
-                    <div style="color:var(--dim); font-size:13px; text-align:center; padding:40px 0;">Transcription segments will appear here...</div>
-                </div>
-                
-                <div class="toolbar">
-                    <button class="btn btn-secondary" onclick="copyLive()">Copy All</button>
-                    <button class="btn btn-secondary" onclick="clearLive()">Clear</button>
-                </div>
-                
-                <div class="hint">
-                    <strong>Privacy:</strong> Live Session uses your browser's built-in speech recognition. For fully offline transcription, use the <strong>Upload</strong> tab.
-                </div>
-            </div>
+        <div class="mode-bar">
+            <button class="mode-btn active" id="btn-dictate" onclick="setMode('dictate')">🎙️ Dictate</button>
+            <button class="mode-btn" id="btn-upload" onclick="setMode('upload')">📁 Upload</button>
         </div>
         
         <!-- DICTATE -->
-        <div id="panel-dictate" class="panel hidden">
+        <div id="panel-dictate" class="panel">
             <div class="card">
-                <h2>🎙️ Dictate</h2>
-                <p>Hands-free medical documentation. Speak naturally and use voice commands for punctuation, formatting, and structure.</p>
+                <h2>Voice Dictation</h2>
+                <p>Press and hold the orb, speak naturally. Say <b>period</b>, <b>comma</b>, <b>new line</b> for formatting. Release when done.</p>
                 
-                <div style="display:flex; align-items:center; gap:16px; margin-bottom:8px;">
-                    <button class="record-btn" id="dictRecordBtn" onclick="toggleDictate()">
+                <div class="rec-wrap">
+                    <div class="rec-orb" id="recOrb" onmousedown="startDictate()" onmouseup="stopDictate()" ontouchstart="startDictate()" ontouchend="stopDictate()">
                         <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
-                    </button>
-                    <div>
-                        <div style="font-size:18px; font-weight:600;" id="dictTimer">00:00</div>
-                        <div style="font-size:12px; color:var(--dim);" id="dictSub">Tap to start dictating</div>
                     </div>
+                    <div class="rec-label" id="dictLabel">Hold to dictate</div>
+                    <div class="rec-timer" id="dictTimer"></div>
                 </div>
                 
                 <div class="wave-box">
                     <canvas class="waveform" id="dictWave"></canvas>
-                    <div class="wave-label" id="dictWaveLabel">Audio waveform will appear here</div>
+                    <div class="wave-placeholder" id="dictWaveLabel">Audio waveform</div>
                 </div>
                 
-                <textarea class="transcript-box" id="dictText" placeholder="Your dictated text will appear here..."></textarea>
+                <textarea class="transcript-area" id="dictText" placeholder="Your dictation will appear here..."></textarea>
                 
                 <div class="toolbar">
-                    <button class="btn btn-secondary" onclick="copyDict()">Copy</button>
-                    <button class="btn btn-secondary" onclick="clearDict()">Clear</button>
-                </div>
-                
-                <div class="hint">
-                    <strong>Voice Commands:</strong> Say these words to insert formatting. Review and edit as needed.
-                </div>
-                <div class="command-grid">
-                    <div class="command-item">period <kbd>.</kbd></div>
-                    <div class="command-item">comma <kbd>,</kbd></div>
-                    <div class="command-item">colon <kbd>:</kbd></div>
-                    <div class="command-item">semicolon <kbd>;</kbd></div>
-                    <div class="command-item">question mark <kbd>?</kbd></div>
-                    <div class="command-item">exclamation mark <kbd>!</kbd></div>
-                    <div class="command-item">new line <kbd>↵</kbd></div>
-                    <div class="command-item">new paragraph <kbd>¶</kbd></div>
-                    <div class="command-item">open parenthesis <kbd>(</kbd></div>
-                    <div class="command-item">close parenthesis <kbd>)</kbd></div>
-                    <div class="command-item">hyphen <kbd>-</kbd></div>
-                    <div class="command-item">slash <kbd>/</kbd></div>
+                    <button class="btn btn-primary" onclick="copyDict()">📋 Copy</button>
+                    <button class="btn" onclick="clearDict()">🗑️ Clear</button>
+                    <button class="btn btn-good" onclick="teachFromDict()">🧠 Teach AI</button>
                 </div>
             </div>
         </div>
@@ -365,449 +354,512 @@
         <!-- UPLOAD -->
         <div id="panel-upload" class="panel hidden">
             <div class="card">
-                <h2>📁 Upload Audio</h2>
-                <p>Transcribe recorded consultations, phone calls, or dictations with local AI. No data leaves your device.</p>
+                <h2>Upload Audio</h2>
+                <p>Drop a recorded dictation or consultation. The AI runs entirely on this device — audio never leaves.</p>
                 
-                <div class="upload-zone" onclick="document.getElementById('upFile').click()">
-                    <div class="icon">☁️</div>
-                    <div style="font-size:15px; font-weight:500; color:#cbd5e1; margin-bottom:6px;">Click to upload audio</div>
-                    <div style="font-size:12px;">WAV, MP3, M4A, WEBM — up to 50 MB</div>
-                    <input type="file" id="upFile" accept="audio/*" style="display:none;" onchange="handleUpload(event)">
+                <div class="setting-row">
+                    <div class="setting-label">AI Model</div>
+                    <select id="modelSelect">
+                        <option value="Xenova/whisper-small">Small — Best accuracy (466 MB)</option>
+                        <option value="Xenova/whisper-base">Base — Fast (74 MB)</option>
+                    </select>
                 </div>
                 
-                <div class="progress-box hidden" id="upProgress">
-                    <div class="progress-meta">
-                        <span id="upLabel">Loading model...</span>
-                        <span id="upPct">0%</span>
-                    </div>
-                    <div class="progress-track"><div class="progress-bar" id="upBar" style="width:0%"></div></div>
+                <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleDrop(event)">
+                    <div class="dropzone-icon">☁️</div>
+                    <div class="dropzone-title">Drop audio here or click to browse</div>
+                    <div class="dropzone-sub">MP3, WAV, M4A, WEBM, OGG</div>
+                    <input type="file" id="fileInput" accept="audio/*" class="hidden" onchange="handleFile(event)">
                 </div>
                 
-                <textarea class="transcript-box hidden" id="upText" placeholder="Transcription will appear here..."></textarea>
+                <div class="progress-wrap hidden" id="upProgress">
+                    <div class="progress-meta"><span id="upLabel">Loading...</span><span id="upPct">0%</span></div>
+                    <div class="progress-track"><div class="progress-fill" id="upBar"></div></div>
+                </div>
+                
+                <div id="fileList"></div>
+                
+                <textarea class="transcript-area hidden" id="upText" style="margin-top:16px;" placeholder="Transcription will appear here..."></textarea>
                 
                 <div class="toolbar hidden" id="upTools">
-                    <button class="btn btn-secondary" onclick="copyUp()">Copy</button>
-                    <button class="btn btn-secondary" onclick="clearUp()">Clear</button>
-                </div>
-                
-                <div class="hint">
-                    <strong class="local">● Fully Offline:</strong> The AI model runs entirely in your browser. Audio never leaves this device.
+                    <button class="btn btn-primary" onclick="copyUp()">📋 Copy</button>
+                    <button class="btn" onclick="clearUp()">🗑️ Clear</button>
+                    <button class="btn btn-good" onclick="teachFromUp()">🧠 Teach AI</button>
                 </div>
             </div>
         </div>
         
-        <div class="privacy-footer">
-            <span class="local">● Upload Mode: 100% Local — No Cloud</span> &nbsp;|&nbsp; 
-            <span class="cloud">● Live/Dictate: Browser Speech Engine</span>
+        <div class="privacy-foot">
+            <b>● Local AI:</b> Transcription runs on your device. No cloud. No subscription. <b>AETHER</b> learns from your corrections and gets better over time.
         </div>
     </div>
     
-    <div class="toast" id="toast"><span class="toast-icon" id="toastIcon">✓</span><span id="toastMsg">Message</span></div>
+    <!-- Memory Modal -->
+    <div class="modal-overlay" id="memModal" onclick="if(event.target===this)closeMemory()">
+        <div class="modal">
+            <h3>🧠 AI Memory</h3>
+            <p style="font-size:12px;color:var(--text-dim);margin-bottom:16px;">AETHER automatically fixes these words in every future transcript.</p>
+            <div id="memList"><div style="color:var(--text-dim);font-size:13px;text-align:center;padding:20px;">No corrections learned yet.</div></div>
+            <div style="margin-top:16px;display:flex;gap:10px;">
+                <button class="btn btn-primary" onclick="closeMemory()" style="flex:1;">Close</button>
+                <button class="btn btn-warn" onclick="clearMemory()">Reset All</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast">Message</div>
 
     <script type="module">
         import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
         
         // ===== STATE =====
         let asr = null;
-        let activeTab = 'live';
-        let liveRec = null, dictRec = null;
-        let liveTimer = null, dictTimer = null;
-        let liveSec = 0, dictSec = 0;
-        let liveAudioCtx = null, dictAudioCtx = null;
-        let liveAnalyser = null, dictAnalyser = null;
-        let liveAnim = null, dictAnim = null;
-        let liveStream = null, dictStream = null;
+        let corrections = new Map(); // wrong -> right
+        let db = null;
+        let mode = 'dictate';
+        let isDictating = false;
+        let dictRec = null;
+        let dictStream = null;
+        let dictCtx = null;
+        let dictAnalyser = null;
+        let dictAnim = null;
+        let audioChunks = [];
         
-        // ===== TABS =====
-        window.switchTab = (tab) => {
-            activeTab = tab;
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-            ['live','dictate','upload'].forEach(t => {
-                document.getElementById('panel-'+t).classList.add('hidden');
-            });
-            document.getElementById('panel-'+tab).classList.remove('hidden');
+        // Preload medical dictionary
+        const MEDICAL_DICT = {
+            'hipodense':'hypodense','hyperdense':'hyperdense','metastasis':'metastasis',
+            'lymphadenopathy':'lymphadenopathy','pleural':'pleural','effusion':'effusion',
+            'pneumonia':'pneumonia','dyspnea':'dyspnea','orthopnea':'orthopnea',
+            'tachycardia':'tachycardia','bradycardia':'bradycardia','hypertension':'hypertension',
+            'hypotension':'hypotension','diabetes':'diabetes','mellitus':'mellitus',
+            'metformine':'metformin','insuline':'insulin','atorvastatine':'atorvastatin',
+            'lisinoprile':'lisinopril','amlodipine':'amlodipine','omeprazole':'omeprazole',
+            'furosemide':'furosemide','warfarine':'warfarin','heparine':'heparin',
+            'acetaminophen':'acetaminophen','ibuprofene':'ibuprofen','morphine':'morphine',
+            'oxycodone':'oxycodone','tramadol':'tramadol','gabapentine':'gabapentin',
+            'levothyroxine':'levothyroxine','prednisone':'prednisone','azithromycine':'azithromycin',
+            'ciprofloxacine':'ciprofloxacin','cephalexine':'cephalexin','clindamycine':'clindamycin',
+            'metronidazole':'metronidazole','fluconazole':'fluconazole','acyclovir':'acyclovir',
+            'albuterol':'albuterol','fluticasone':'fluticasone','budenoside':'budesonide',
+            'tiotropium':'tiotropium','montelukast':'montelukast','colon':'colon',
+            'period':'period','comma':'comma','semicolon':'semicolon','hyphen':'hyphen',
+            'myocardial':'myocardial','infarction':'infarction','cerebrovascular':'cerebrovascular',
+            'accident':'accident','congestive':'congestive','failure':'failure',
+            'chronic':'chronic','obstructive':'obstructive','pulmonary':'pulmonary',
+            'disease':'disease','gastroesophageal':'gastroesophageal','reflux':'reflux',
+            'irritable':'irritable','bowel':'bowel','syndrome':'syndrome',
+            'inflammatory':'inflammatory','bowel':'bowel','disease':'disease',
+            'rheumatoid':'rheumatoid','arthritis':'arthritis','osteoarthritis':'osteoarthritis',
+            'osteoporosis':'osteoporosis','fracture':'fracture','dislocation':'dislocation',
+            'sprain':'sprain','strain':'strain','laceration':'laceration','abrasion':'abrasion',
+            'contusion':'contusion','hematoma':'hematoma','abscess':'abscess','cellulitis':'cellulitis',
+            'sepsis':'sepsis','meningitis':'meningitis','encephalitis':'encephalitis',
+            'pneumothorax':'pneumothorax','hemothorax':'hemothorax','effusion':'effusion',
+            'tamponade':'tamponade','embolism':'embolism','thrombosis':'thrombosis',
+            'aneurysm':'aneurysm','dissection':'dissection','stenosis':'stenosis',
+            'regurgitation':'regurgitation','insufficiency':'insufficiency',
+            'fibrillation':'fibrillation','flutter':'flutter','block':'block',
+            'ischemia':'ischemia','angina':'angina','claudication':'claudication',
+            'edema':'edema','ascites':'ascites','jaundice':'jaundice','hepatomegaly':'hepatomegaly',
+            'splenomegaly':'splenomegaly','lymphadenopathy':'lymphadenopathy',
+            'nodule':'nodule','mass':'mass','tumor':'tumor','cyst':'cyst','polyp':'polyp',
+            'lesion':'lesion','ulcer':'ulcer','erosion':'erosion','stricture':'stricture',
+            'fistula':'fistula','perforation':'perforation','obstruction':'obstruction',
+            'ileus':'ileus','volvulus':'volvulus','intussusception':'intussusception',
+            'hernia':'hernia','appendicitis':'appendicitis','cholecystitis':'cholecystitis',
+            'pancreatitis':'pancreatitis','diverticulitis':'diverticulitis','peritonitis':'peritonitis',
+            'nephrolithiasis':'nephrolithiasis','urolithiasis':'urolithiasis','pyelonephritis':'pyelonephritis',
+            'cystitis':'cystitis','urethritis':'urethritis','prostatitis':'prostatitis',
+            'epididymitis':'epididymitis','orchitis':'orchitis','hydrocele':'hydrocele',
+            'varicocele':'varicocele','phimosis':'phimosis','paraphimosis':'paraphimosis',
+            'balanitis':'balanitis','cervicitis':'cervicitis','endometritis':'endometritis',
+            'salpingitis':'salpingitis','oophoritis':'oophoritis','pelvic':'pelvic',
+            'inflammatory':'inflammatory','disease':'disease','fibroid':'fibroid',
+            'polyp':'polyp','cyst':'cyst','endometriosis':'endometriosis','adenomyosis':'adenomyosis',
+            'prolapse':'prolapse','incontinence':'incontinence','retention':'retention',
+            'hematuria':'hematuria','proteinuria':'proteinuria','glycosuria':'glycosuria',
+            'ketonuria':'ketonuria','bilirubinuria':'bilirubinuria','pyuria':'pyuria',
+            'bacteriuria':'bacteriuria','calciuria':'calciuria','oxaluria':'oxaluria',
+            'phosphaturia':'phosphaturia','uricosuria':'uricosuria','cystinuria':'cystinuria',
+            'xanthinuria':'xanthinuria','alkaptonuria':'alkaptonuria','porphyria':'porphyria',
+            'homocystinuria':'homocystinuria','phenylketonuria':'phenylketonuria','tyrosinemia':'tyrosinemia',
+            'galactosemia':'galactosemia','fructosemia':'fructosemia','glycogen':'glycogen',
+            'storage':'storage','disease':'disease','mucopolysaccharidosis':'mucopolysaccharidosis',
+            'sphingolipidosis':'sphingolipidosis','gangliosidosis':'gangliosidosis','leukodystrophy':'leukodystrophy',
+            'neurodegeneration':'neurodegeneration','ataxia':'ataxia','chorea':'chorea',
+            'dystonia':'dystonia','parkinsonism':'parkinsonism','tremor':'tremor','myoclonus':'myoclonus',
+            'tic':'tic','seizure':'seizure','epilepsy':'epilepsy','convulsion':'convulsion',
+            'syncope':'syncope','presyncope':'presyncope','vertigo':'vertigo','dizziness':'dizziness',
+            'tinnitus':'tinnitus','hearing':'hearing','loss':'loss','vision':'vision',
+            'blindness':'blindness','diplopia':'diplopia','nystagmus':'nystagmus','ptosis':'ptosis',
+            'mydriasis':'mydriasis','miosis':'miosis','anisocoria':'anisocoria','papilledema':'papilledema',
+            'pallor':'pallor','icterus':'icterus','cyanosis':'cyanosis','erythema':'erythema',
+            'rash':'rash','urticaria':'urticaria','pruritus':'pruritus','petechiae':'petechiae',
+            'purpura':'purpura','ecchymosis':'ecchymosis','hematoma':'hematoma','erythroderma':'erythroderma',
+            'desquamation':'desquamation','bullae':'bullae','vesicles':'vesicles','pustules':'pustules',
+            'macules':'macules','papules':'papules','nodules':'nodules','plaques':'plaques',
+            'scales':'scales','crusts':'crusts','erosions':'erosions','ulcers':'ulcers',
+            'fissures':'fissures','sinuses':'sinuses','fistulas':'fistulas','scars':'scars',
+            'keloids':'keloids','atrophie':'atrophy','lichenification':'lichenification',
+            'hyperpigmentation':'hyperpigmentation','hypopigmentation':'hypopigmentation',
+            'vitiligo':'vitiligo','melasma':'melasma','albinism':'albinism',
         };
         
-        // ===== HELPERS =====
-        function fmtTime(s) {
-            const m = String(Math.floor(s/60)).padStart(2,'0');
-            const sec = String(s%60).padStart(2,'0');
-            return `${m}:${sec}`;
+        // ===== DB =====
+        function initDB(){
+            return new Promise((res,rej)=>{
+                const req = indexedDB.open('aether_db',1);
+                req.onerror=()=>rej(req.error);
+                req.onsuccess=()=>{db=req.result;res();};
+                req.onupgradeneeded=(e)=>{
+                    e.target.result.createObjectStore('corrections',{keyPath:'wrong'});
+                };
+            });
         }
-        function showToast(msg, icon='✓') {
-            const t = document.getElementById('toast');
-            document.getElementById('toastMsg').textContent = msg;
-            document.getElementById('toastIcon').textContent = icon;
-            t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 2800);
+        async function loadMemory(){
+            if(!db)await initDB();
+            const tx=db.transaction('corrections','readonly');
+            const store=tx.objectStore('corrections');
+            const all=await store.getAll();
+            corrections.clear();
+            // Preload medical dict first
+            for(const[k,v]of Object.entries(MEDICAL_DICT))corrections.set(k.toLowerCase(),v);
+            // Then user corrections override
+            for(const c of all)corrections.set(c.wrong.toLowerCase(),c.right);
+            updateMemChip();
         }
-        function setStatus(text, type='ready') {
-            document.getElementById('statusText').textContent = text;
-            const dot = document.getElementById('statusDot');
-            dot.className = 'badge-dot' + (type==='busy'?' busy':'') + (type==='offline'?' offline':'');
+        async function saveCorrection(wrong,right){
+            if(!db)await initDB();
+            const tx=db.transaction('corrections','readwrite');
+            tx.objectStore('corrections').put({wrong:wrong.toLowerCase(),right,ts:Date.now()});
+            corrections.set(wrong.toLowerCase(),right);
+            updateMemChip();
+        }
+        async function clearAllMemory(){
+            if(!db)await initDB();
+            const tx=db.transaction('corrections','readwrite');
+            await tx.objectStore('corrections').clear();
+            corrections.clear();
+            for(const[k,v]of Object.entries(MEDICAL_DICT))corrections.set(k.toLowerCase(),v);
+            updateMemChip();
+        }
+        function updateMemChip(){
+            const count = corrections.size - Object.keys(MEDICAL_DICT).length;
+            document.getElementById('memoryChip').textContent = `🧠 AI Memory: ${Math.max(0,count)}`;
+        }
+        function applyCorrections(text){
+            let out = text;
+            for(const[wrong,right]of corrections){
+                const re = new RegExp(`\\b${wrong}\\b`,'gi');
+                out = out.replace(re,right);
+            }
+            return out;
         }
         
-        // ===== WAVEFORM =====
-        function initWave(canvasId, labelId, stream) {
-            const canvas = document.getElementById(canvasId);
-            const label = document.getElementById(labelId);
-            label.style.display = 'none';
-            const ctx = canvas.getContext('2d');
-            
-            const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-            const analyser = audioCtx.createAnalyser();
-            analyser.fftSize = 128;
-            const source = audioCtx.createMediaStreamSource(stream);
-            source.connect(analyser);
-            
-            function resize() {
-                const rect = canvas.parentElement.getBoundingClientRect();
-                canvas.width = rect.width * window.devicePixelRatio;
-                canvas.height = rect.height * window.devicePixelRatio;
-                ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        // ===== UI =====
+        window.setMode = (m)=>{
+            mode=m;
+            document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+            document.getElementById('btn-'+m).classList.add('active');
+            document.getElementById('panel-dictate').classList.toggle('hidden',m!=='dictate');
+            document.getElementById('panel-upload').classList.toggle('hidden',m!=='upload');
+        };
+        function setStatus(text,type='ready'){
+            document.getElementById('statusText').textContent=text;
+            const dot=document.getElementById('statusDot');
+            dot.className='status-dot'+(type==='busy'?' busy':'')+(type==='offline'?' offline':'');
+        }
+        function toast(msg){
+            const t=document.getElementById('toast');
+            t.textContent=msg;t.classList.add('show');
+            setTimeout(()=>t.classList.remove('show'),2800);
+        }
+        
+        // ===== DICTATION =====
+        window.startDictate = ()=>{
+            if(isDictating)return;
+            if(!('webkitSpeechRecognition'in window)&&!('SpeechRecognition'in window)){
+                toast('Speech recognition not supported. Use Chrome/Edge.');return;
             }
-            resize();
-            window.addEventListener('resize', resize);
+            const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+            dictRec = new SR();
+            dictRec.continuous=true;dictRec.interimResults=true;dictRec.lang='en-US';
             
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
+            let final='';
+            const box=document.getElementById('dictText');
             
-            function draw() {
-                const anim = requestAnimationFrame(draw);
-                if (activeTab === 'live') liveAnim = anim; else dictAnim = anim;
-                analyser.getByteFrequencyData(dataArray);
-                
-                const w = canvas.parentElement.getBoundingClientRect().width;
-                const h = canvas.parentElement.getBoundingClientRect().height;
+            dictRec.onresult=(e)=>{
+                let interim='';
+                for(let i=e.resultIndex;i<e.results.length;i++){
+                    const t=e.results[i][0].transcript;
+                    if(e.results[i].isFinal){
+                        let cleaned = applyCommands(t);
+                        cleaned = applyCorrections(cleaned);
+                        final+=cleaned+' ';
+                        box.value=final;
+                    }else interim=t;
+                }
+                if(interim){
+                    // Show interim with corrections preview
+                    let preview = applyCommands(interim);
+                    preview = applyCorrections(preview);
+                    // Don't permanently add interim, just visual feedback could go here
+                }
+            };
+            dictRec.onerror=(e)=>{if(e.error!=='no-speech')console.error(e);};
+            dictRec.onend=()=>{if(dictRec&&dictRec._running)dictRec.start();};
+            
+            navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+                dictStream=stream;
+                initDictWave(stream);
+                dictRec.start();dictRec._running=true;isDictating=true;
+                document.getElementById('recOrb').classList.add('recording');
+                document.getElementById('dictLabel').textContent='Listening...';
+                setStatus('Dictating','busy');
+            }).catch(()=>toast('Microphone denied'));
+        };
+        window.stopDictate = ()=>{
+            if(!isDictating)return;
+            if(dictRec){dictRec._running=false;dictRec.stop();dictRec=null;}
+            if(dictStream){dictStream.getTracks().forEach(t=>t.stop());dictStream=null;}
+            stopDictWave();
+            isDictating=false;
+            document.getElementById('recOrb').classList.remove('recording');
+            document.getElementById('dictLabel').textContent='Hold to dictate';
+            setStatus('Ready');
+        };
+        
+        function applyCommands(text){
+            const cmds={
+                '\\bperiod\\b':'.','\\bcomma\\b':',','\\bcolon\\b':':','\\bsemicolon\\b':';',
+                '\\bquestion mark\\b':'?','\\bexclamation mark\\b':'!','\\bexclamation point\\b':'!',
+                '\\bnew line\\b':'\n','\\bnew paragraph\\b':'\n\n',
+                '\\bopen parenthesis\\b':'(','\\bclose parenthesis\\b':')',
+                '\\bhyphen\\b':'-','\\bdash\\b':'—','\\bslash\\b':'/',
+            };
+            let out=text;
+            for(const[p,r]of Object.entries(cmds)){
+                out=out.replace(new RegExp(p,'gi'),r);
+            }
+            out=out.replace(/\s+\./g,'.').replace(/\s+,/g,',').replace(/\s+:/g,':')
+                   .replace(/\s+;/g,';').replace(/\s+\?/g,'?').replace(/\s+!/g,'!')
+                   .replace(/\s+\)/g,')').replace(/\(\s+/g,'(');
+            return out;
+        }
+        
+        // Dictation waveform
+        function initDictWave(stream){
+            const canvas=document.getElementById('dictWave');
+            const label=document.getElementById('dictWaveLabel');
+            label.style.display='none';
+            const ctx=canvas.getContext('2d');
+            dictCtx=new(window.AudioContext||window.webkitAudioContext)();
+            dictAnalyser=dictCtx.createAnalyser();dictAnalyser.fftSize=128;
+            const src=dictCtx.createMediaStreamSource(stream);
+            src.connect(dictAnalyser);
+            
+            function resize(){
+                const r=canvas.parentElement.getBoundingClientRect();
+                canvas.width=r.width*window.devicePixelRatio;
+                canvas.height=r.height*window.devicePixelRatio;
+                ctx.scale(window.devicePixelRatio,window.devicePixelRatio);
+            }
+            resize();window.addEventListener('resize',resize);
+            
+            const buf=new Uint8Array(dictAnalyser.frequencyBinCount);
+            function draw(){
+                dictAnim=requestAnimationFrame(draw);
+                dictAnalyser.getByteFrequencyData(buf);
+                const w=canvas.parentElement.getBoundingClientRect().width;
+                const h=canvas.parentElement.getBoundingClientRect().height;
                 ctx.clearRect(0,0,w,h);
                 
-                const barW = (w / bufferLength) * 2.5;
-                let x = 0;
-                for (let i=0; i<bufferLength; i++) {
-                    const barH = (dataArray[i] / 255) * h * 0.85;
-                    const gradient = ctx.createLinearGradient(0, h-barH, 0, h);
-                    gradient.addColorStop(0, 'rgba(139,92,246,0.9)');
-                    gradient.addColorStop(1, 'rgba(99,102,241,0.4)');
-                    ctx.fillStyle = gradient;
-                    ctx.fillRect(x, h - barH, barW, barH);
-                    x += barW + 1;
+                // Smooth curve
+                ctx.beginPath();
+                const slice=w/buf.length;
+                let x=0;
+                for(let i=0;i<buf.length;i++){
+                    const v=buf[i]/255;
+                    const y=h-(v*h*0.85);
+                    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+                    x+=slice;
                 }
+                ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.closePath();
+                const grad=ctx.createLinearGradient(0,0,0,h);
+                grad.addColorStop(0,'rgba(124,111,255,0.6)');
+                grad.addColorStop(1,'rgba(124,111,255,0.05)');
+                ctx.fillStyle=grad;ctx.fill();
+                
+                // Top line glow
+                ctx.beginPath();x=0;
+                for(let i=0;i<buf.length;i++){
+                    const v=buf[i]/255;
+                    const y=h-(v*h*0.85);
+                    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+                    x+=slice;
+                }
+                ctx.strokeStyle='rgba(184,188,200,0.8)';
+                ctx.lineWidth=1.5;ctx.shadowColor='rgba(255,255,255,0.5)';
+                ctx.shadowBlur=8;ctx.stroke();ctx.shadowBlur=0;
             }
             draw();
-            return { audioCtx, analyser };
         }
-        function stopWave(type) {
-            const anim = type==='live'? liveAnim : dictAnim;
-            const ctx = type==='live'? liveAudioCtx : dictAudioCtx;
-            if (anim) cancelAnimationFrame(anim);
-            if (ctx) ctx.close();
-            if (type==='live') { liveAnim=null; liveAudioCtx=null; liveAnalyser=null; }
-            else { dictAnim=null; dictAudioCtx=null; dictAnalyser=null; }
-            
-            const canvasId = type==='live'?'liveWave':'dictWave';
-            const labelId = type==='live'?'liveWaveLabel':'dictWaveLabel';
-            const canvas = document.getElementById(canvasId);
-            const ctx2 = canvas.getContext('2d');
-            ctx2.clearRect(0,0,canvas.width,canvas.height);
-            document.getElementById(labelId).style.display = 'flex';
+        function stopDictWave(){
+            if(dictAnim)cancelAnimationFrame(dictAnim);
+            if(dictCtx)dictCtx.close();
+            dictAnim=null;dictCtx=null;dictAnalyser=null;
+            document.getElementById('dictWaveLabel').style.display='flex';
+            const c=document.getElementById('dictWave');
+            c.getContext('2d').clearRect(0,0,c.width,c.height);
         }
         
-        // ===== LIVE SESSION (Web Speech API) =====
-        window.toggleLive = () => {
-            const btn = document.getElementById('liveRecordBtn');
-            if (!liveRec) {
-                // START
-                if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                    showToast('Speech recognition not supported in this browser. Use Chrome.', '⚠');
-                    return;
-                }
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                liveRec = new SpeechRecognition();
-                liveRec.continuous = true;
-                liveRec.interimResults = true;
-                liveRec.lang = 'en-US';
-                
-                let finalTranscript = '';
-                
-                liveRec.onresult = (e) => {
-                    let interim = '';
-                    for (let i=e.resultIndex; i<e.results.length; i++) {
-                        const transcript = e.results[i][0].transcript;
-                        if (e.results[i].isFinal) {
-                            finalTranscript += transcript + ' ';
-                            addLiveSegment(transcript, false);
-                        } else {
-                            interim = transcript;
-                        }
-                    }
-                    if (interim) updateLastInterim(interim);
-                };
-                
-                liveRec.onerror = (e) => {
-                    console.error(e);
-                    if (e.error !== 'no-speech') showToast('Error: ' + e.error, '⚠');
-                };
-                
-                liveRec.onend = () => {
-                    if (liveRec && liveRec._running) liveRec.start();
-                };
-                
-                navigator.mediaDevices.getUserMedia({audio:true}).then(stream => {
-                    liveStream = stream;
-                    const wave = initWave('liveWave', 'liveWaveLabel', stream);
-                    liveAudioCtx = wave.audioCtx;
-                    liveAnalyser = wave.analyser;
-                    
-                    liveRec.start();
-                    liveRec._running = true;
-                    
-                    btn.classList.add('recording');
-                    document.getElementById('liveSub').textContent = 'Listening...';
-                    setStatus('Listening', 'busy');
-                    
-                    liveSec = 0;
-                    document.getElementById('liveTimer').textContent = '00:00';
-                    liveTimer = setInterval(() => {
-                        liveSec++;
-                        document.getElementById('liveTimer').textContent = fmtTime(liveSec);
-                    }, 1000);
-                }).catch(() => {
-                    showToast('Microphone access denied', '⚠');
-                    liveRec = null;
-                });
-                
-            } else {
-                // STOP
-                liveRec._running = false;
-                liveRec.stop();
-                liveRec = null;
-                if (liveStream) { liveStream.getTracks().forEach(t=>t.stop()); liveStream=null; }
-                clearInterval(liveTimer);
-                btn.classList.remove('recording');
-                document.getElementById('liveSub').textContent = 'Tap to start listening';
-                setStatus('Ready');
-                stopWave('live');
-            }
+        window.copyDict=()=>{
+            const t=document.getElementById('dictText').value;
+            if(!t)return toast('Nothing to copy');
+            navigator.clipboard.writeText(t).then(()=>toast('Copied'));
+        };
+        window.clearDict=()=>{document.getElementById('dictText').value='';};
+        window.teachFromDict=()=>{
+            const box=document.getElementById('dictText');
+            const text=box.value;
+            if(!text)return toast('No text to learn from');
+            // Simple heuristic: look for words that might be wrong (short, repeated, etc.)
+            // For MVP, we ask user to manually indicate. But let's do auto-diff if we had original.
+            // Since we don't track original vs corrected in dictate mode easily, let's do a prompt.
+            const wrong=prompt('Which word was transcribed wrong?');
+            if(!wrong)return;
+            const right=prompt('What should it be?');
+            if(!right)return;
+            saveCorrection(wrong,right);
+            toast(`Learned: "${wrong}" → "${right}"`);
         };
         
-        function addLiveSegment(text, interim) {
-            const feed = document.getElementById('liveFeed');
-            if (feed.querySelector('.live-segment') === null && feed.querySelector('div[style*="text-align:center"]')) {
-                feed.innerHTML = '';
-            }
-            
-            // Remove previous interim
-            const prev = feed.querySelector('.live-segment.interim');
-            if (prev) prev.remove();
-            
-            const seg = document.createElement('div');
-            seg.className = 'live-segment' + (interim?' interim':'');
-            const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
-            seg.innerHTML = `<div class="time">${time}</div><div class="text">${text}</div>`;
-            feed.appendChild(seg);
-            feed.scrollTop = feed.scrollHeight;
-        }
-        function updateLastInterim(text) {
-            const feed = document.getElementById('liveFeed');
-            let prev = feed.querySelector('.live-segment.interim');
-            if (!prev) {
-                prev = document.createElement('div');
-                prev.className = 'live-segment interim';
-                feed.appendChild(prev);
-            }
-            const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
-            prev.innerHTML = `<div class="time">${time} • typing...</div><div class="text">${text}</div>`;
-            feed.scrollTop = feed.scrollHeight;
-        }
-        window.clearLive = () => {
-            document.getElementById('liveFeed').innerHTML = '<div style="color:var(--dim); font-size:13px; text-align:center; padding:40px 0;">Transcription segments will appear here...</div>';
+        // ===== UPLOAD =====
+        window.handleDrop=(e)=>{
+            e.preventDefault();e.stopPropagation();
+            document.getElementById('dropzone').classList.remove('dragover');
+            if(e.dataTransfer.files.length)processFile(e.dataTransfer.files[0]);
         };
-        window.copyLive = () => {
-            const segs = document.querySelectorAll('#liveFeed .live-segment:not(.interim)');
-            const text = Array.from(segs).map(s => s.querySelector('.text').textContent).join('\n');
-            if (!text) return showToast('Nothing to copy', '⚠');
-            navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard'));
+        window.handleFile=(e)=>{
+            if(e.target.files.length)processFile(e.target.files[0]);
         };
-        
-        // ===== DICTATE (Web Speech API + Commands) =====
-        window.toggleDictate = () => {
-            const btn = document.getElementById('dictRecordBtn');
-            if (!dictRec) {
-                if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                    showToast('Speech recognition not supported. Use Chrome.', '⚠');
-                    return;
-                }
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                dictRec = new SpeechRecognition();
-                dictRec.continuous = true;
-                dictRec.interimResults = true;
-                dictRec.lang = 'en-US';
-                
-                let currentText = document.getElementById('dictText').value;
-                
-                dictRec.onresult = (e) => {
-                    let interim = '';
-                    for (let i=e.resultIndex; i<e.results.length; i++) {
-                        const t = e.results[i][0].transcript;
-                        if (e.results[i].isFinal) {
-                            currentText += applyCommands(t) + ' ';
-                            document.getElementById('dictText').value = currentText;
-                        } else {
-                            interim = t;
-                        }
-                    }
-                };
-                
-                dictRec.onerror = (e) => { if (e.error !== 'no-speech') console.error(e); };
-                dictRec.onend = () => { if (dictRec && dictRec._running) dictRec.start(); };
-                
-                navigator.mediaDevices.getUserMedia({audio:true}).then(stream => {
-                    dictStream = stream;
-                    const wave = initWave('dictWave', 'dictWaveLabel', stream);
-                    dictAudioCtx = wave.audioCtx;
-                    dictAnalyser = wave.analyser;
-                    
-                    dictRec.start();
-                    dictRec._running = true;
-                    
-                    btn.classList.add('recording');
-                    document.getElementById('dictSub').textContent = 'Dictating...';
-                    setStatus('Dictating', 'busy');
-                    
-                    dictSec = 0;
-                    document.getElementById('dictTimer').textContent = '00:00';
-                    dictTimer = setInterval(() => {
-                        dictSec++;
-                        document.getElementById('dictTimer').textContent = fmtTime(dictSec);
-                    }, 1000);
-                }).catch(() => {
-                    showToast('Microphone access denied', '⚠');
-                    dictRec = null;
-                });
-            } else {
-                dictRec._running = false;
-                dictRec.stop();
-                dictRec = null;
-                if (dictStream) { dictStream.getTracks().forEach(t=>t.stop()); dictStream=null; }
-                clearInterval(dictTimer);
-                btn.classList.remove('recording');
-                document.getElementById('dictSub').textContent = 'Tap to start dictating';
-                setStatus('Ready');
-                stopWave('dict');
-            }
-        };
-        
-        function applyCommands(text) {
-            // Smart replacement: only replace when these appear as standalone commands
-            // This is a best-effort MVP approach
-            const commands = {
-                '\\bperiod\\b': '.',
-                '\\bcomma\\b': ',',
-                '\\bcolon\\b': ':',
-                '\\bsemicolon\\b': ';',
-                '\\bquestion mark\\b': '?',
-                '\\bexclamation mark\\b': '!',
-                '\\bexclamation point\\b': '!',
-                '\\bnew line\\b': '\n',
-                '\\bnew paragraph\\b': '\n\n',
-                '\\bopen parenthesis\\b': '(',
-                '\\bclose parenthesis\\b': ')',
-                '\\bhyphen\\b': '-',
-                '\\bdash\\b': '—',
-                '\\bslash\\b': '/',
-            };
+        async function processFile(file){
+            const list=document.getElementById('fileList');
+            const progress=document.getElementById('upProgress');
+            const bar=document.getElementById('upBar');
+            const label=document.getElementById('upLabel');
+            const pct=document.getElementById('upPct');
+            const text=document.getElementById('upText');
+            const tools=document.getElementById('upTools');
             
-            let result = text;
-            for (const [pattern, replacement] of Object.entries(commands)) {
-                const regex = new RegExp(pattern, 'gi');
-                result = result.replace(regex, replacement);
-            }
-            
-            // Clean spacing around punctuation
-            result = result.replace(/\s+\./g, '.').replace(/\s+,/g, ',').replace(/\s+:/g, ':')
-                           .replace(/\s+;/g, ';').replace(/\s+\?/g, '?').replace(/\s+!/g, '!')
-                           .replace(/\s+\)/g, ')').replace(/\(\s+/g, '(');
-            
-            return result;
-        }
-        window.clearDict = () => { document.getElementById('dictText').value = ''; };
-        window.copyDict = () => {
-            const t = document.getElementById('dictText').value;
-            if (!t) return showToast('Nothing to copy', '⚠');
-            navigator.clipboard.writeText(t).then(() => showToast('Copied to clipboard'));
-        };
-        
-        // ===== UPLOAD (Whisper Local) =====
-        window.handleUpload = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            const progress = document.getElementById('upProgress');
-            const bar = document.getElementById('upBar');
-            const label = document.getElementById('upLabel');
-            const pct = document.getElementById('upPct');
-            const text = document.getElementById('upText');
-            const tools = document.getElementById('upTools');
-            
+            list.innerHTML=`<div class="file-item"><div class="file-icon">🎵</div><div class="file-meta"><div class="file-name">${file.name}</div><div class="file-sub">${(file.size/1024/1024).toFixed(1)} MB</div></div><div class="status-chip status-processing">Processing</div></div>`;
             progress.classList.remove('hidden');
-            text.classList.add('hidden');
-            tools.classList.add('hidden');
-            label.textContent = 'Loading AI model...';
+            text.classList.add('hidden');tools.classList.add('hidden');
             
-            try {
-                if (!asr) {
-                    asr = await pipeline('automatic-speech-recognition', 'Xenova/whisper-base', {
-                        dtype: 'q8',
-                        progress_callback: (x) => {
-                            if (x.status === 'progress') {
-                                const p = Math.round(x.progress);
-                                bar.style.width = p + '%';
-                                pct.textContent = p + '%';
-                                label.textContent = 'Downloading model (one-time)...';
+            const modelName=document.getElementById('modelSelect').value;
+            label.textContent='Loading AI model (one-time)...';
+            
+            try{
+                if(!asr||asr.modelName!==modelName){
+                    asr = await pipeline('automatic-speech-recognition', modelName, {
+                        dtype:'q8',
+                        progress_callback:(x)=>{
+                            if(x.status==='progress'){
+                                const p=Math.round(x.progress);
+                                bar.style.width=p+'%';pct.textContent=p+'%';
+                                label.textContent=`Downloading ${modelName.split('/')[1]}...`;
                             }
                         }
                     });
+                    asr.modelName=modelName;
                 }
                 
-                label.textContent = 'Decoding audio...';
-                bar.style.width = '100%';
+                label.textContent='Decoding audio...';bar.style.width='100%';pct.textContent='';
                 
-                const arrayBuffer = await file.arrayBuffer();
-                const tempCtx = new (window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
-                const audioBuffer = await tempCtx.decodeAudioData(arrayBuffer);
-                const float32 = audioBuffer.getChannelData(0);
-                tempCtx.close();
+                const ab=await file.arrayBuffer();
+                const ctx=new(window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
+                const buf=await ctx.decodeAudioData(ab);
+                const data=buf.getChannelData(0);
+                ctx.close();
                 
-                label.textContent = 'Transcribing with local AI...';
-                pct.textContent = '';
-                
-                const output = await asr(float32, {
-                    chunk_length_s: 30,
-                    stride_length_s: 5,
-                    language: 'english',
-                    task: 'transcribe'
+                label.textContent='Transcribing...';
+                const out=await asr(data,{
+                    chunk_length_s:30,stride_length_s:5,
+                    language:'english',task:'transcribe'
                 });
                 
-                text.value = output.text.trim();
+                let transcript = out.text.trim();
+                transcript = applyCorrections(transcript);
+                
+                text.value=transcript;
                 text.classList.remove('hidden');
                 tools.classList.remove('hidden');
                 progress.classList.add('hidden');
-                showToast('Transcription complete');
+                list.querySelector('.status-chip').textContent='Done';
+                list.querySelector('.status-chip').className='status-chip status-done';
+                toast('Transcription complete');
                 
-            } catch (err) {
+                // Store original for teaching
+                text.dataset.original = out.text.trim();
+                
+            }catch(err){
                 console.error(err);
-                label.textContent = 'Error: ' + err.message;
-                pct.textContent = '';
-                showToast('Transcription failed', '⚠');
+                label.textContent='Error: '+err.message;
+                pct.textContent='';
+                toast('Failed: '+err.message,'⚠️');
             }
+        }
+        window.copyUp=()=>{
+            const t=document.getElementById('upText').value;
+            if(!t)return toast('Nothing to copy');
+            navigator.clipboard.writeText(t).then(()=>toast('Copied'));
         };
-        window.clearUp = () => { document.getElementById('upText').value = ''; };
-        window.copyUp = () => {
-            const t = document.getElementById('upText').value;
-            if (!t) return showToast('Nothing to copy', '⚠');
-            navigator.clipboard.writeText(t).then(() => showToast('Copied to clipboard'));
+        window.clearUp=()=>{document.getElementById('upText').value='';};
+        window.teachFromUp=()=>{
+            const text=document.getElementById('upText');
+            const original=text.dataset.original||'';
+            const edited=text.value;
+            if(!original||original===edited)return toast('Make corrections first');
+            
+            // Find first difference
+            const origWords=original.split(/\s+/);
+            const editWords=edited.split(/\s+/);
+            for(let i=0;i<Math.max(origWords.length,editWords.length);i++){
+                if(origWords[i]&&editWords[i]&&origWords[i]!==editWords[i]){
+                    saveCorrection(origWords[i],editWords[i]);
+                    toast(`Learned: "${origWords[i]}" → "${editWords[i]}"`);
+                    return;
+                }
+            }
+            toast('No single-word change detected. Use manual add.');
         };
+        
+        // ===== MEMORY MODAL =====
+        window.openMemory=()=>{
+            const modal=document.getElementById('memModal');
+            const list=document.getElementById('memList');
+            const userCorrs=[];
+            for(const[k,v]of corrections){
+                if(!MEDICAL_DICT[k])userCorrs.push({wrong:k,right:v});
+            }
+            if(userCorrs.length===0){
+                list.innerHTML='<div style="color:var(--text-dim);font-size:13px;text-align:center;padding:20px;">No corrections learned yet. Edit a transcript and click "Teach AI".</div>';
+            }else{
+                list.innerHTML=userCorrs.map(c=>`<div class="corr-item"><span class="bad">${c.wrong}</span><span style="color:var(--text-dim)">→</span><span class="good">${c.right}</span></div>`).join('');
+            }
+            modal.classList.add('show');
+        };
+        window.closeMemory=()=>document.getElementById('memModal').classList.remove('show');
+        window.clearMemory=()=>{
+            if(!confirm('Reset all learned corrections?'))return;
+            clearAllMemory();
+            openMemory();
+            toast('Memory reset');
+        };
+        
+        // ===== INIT =====
+        loadMemory();
+        setStatus('Ready');
     </script>
 </body>
 </html>
